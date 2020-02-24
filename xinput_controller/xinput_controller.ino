@@ -10,7 +10,7 @@
 
 //Includes
 #include <Bounce.h>
-#include "xinput.h"
+#include <XInput.h>
 
 //General Declarations
 #define MILLIDEBOUNCE 20  //Debounce time in milliseconds
@@ -33,7 +33,6 @@
 #define pinB9 10     //Select 9 pin
 #define pinB10 11    //Start 10 pin
 #define pinOBLED 13  //Onboard LED pin
-
 //Analog Pin Declarations
 #define pinLX 0        //Left X axis pin
 #define pinLY 1        //Left Y axis pin
@@ -84,9 +83,6 @@ Bounce button8 = Bounce(pinB8, MILLIDEBOUNCE);
 Bounce button9 = Bounce(pinB9, MILLIDEBOUNCE);
 Bounce button10 = Bounce(pinB10, MILLIDEBOUNCE);
 
-//Initiate the xinput class and setup the LED pin
-XINPUT controller(LED_ENABLED, pinOBLED);
-
 //void Configure Inputs and Outputs
 void setupPins()
 {
@@ -136,51 +132,39 @@ void buttonRead()
 void processInputs()
 {
   //Update the DPAD
-  controller.dpadUpdate(buttonStatus[POSUP], buttonStatus[POSDN], buttonStatus[POSLT], buttonStatus[POSRT]);
+  XInput.setDpad(buttonStatus[POSUP], buttonStatus[POSDN], buttonStatus[POSLT], buttonStatus[POSRT]);
 
   //Buttons
-  if (buttonStatus[POSB1]) {controller.buttonUpdate(BUTTON_A, 1);}
-  else  {controller.buttonUpdate(BUTTON_A, 0);}
-  if (buttonStatus[POSB2]) {controller.buttonUpdate(BUTTON_B, 1);}
-  else {controller.buttonUpdate(BUTTON_B, 0);}
-  if (buttonStatus[POSB3]) {controller.buttonUpdate(BUTTON_X, 1);}
-  else {controller.buttonUpdate(BUTTON_X, 0);}
-  if (buttonStatus[POSB4]) {controller.buttonUpdate(BUTTON_Y, 1);}
-  else {controller.buttonUpdate(BUTTON_Y, 0);}
-  if (buttonStatus[POSB5]) {controller.buttonUpdate(BUTTON_LB, 1);}
-  else {controller.buttonUpdate(BUTTON_LB, 0);}
-  if (buttonStatus[POSB6]) {controller.buttonUpdate(BUTTON_RB, 1);}
-  else {controller.buttonUpdate(BUTTON_RB, 0);}
-  if (buttonStatus[POSB7]){controller.buttonUpdate(BUTTON_BACK, 1);}
-  else {controller.buttonUpdate(BUTTON_BACK, 0);}
-  if (buttonStatus[POSB8]){controller.buttonUpdate(BUTTON_START, 1);}
-  else {controller.buttonUpdate(BUTTON_START, 0);}
-  if (buttonStatus[POSB9]) {controller.buttonUpdate(BUTTON_L3, 1);}
-  else {controller.buttonUpdate(BUTTON_L3, 0);}
-  if (buttonStatus[POSB10]) {controller.buttonUpdate(BUTTON_R3, 1);}
-  else {controller.buttonUpdate(BUTTON_R3, 0);}
+  XInput.setButton(BUTTON_A, buttonStatus[POSB1]);
+  XInput.setButton(BUTTON_B, buttonStatus[POSB2]);
+  XInput.setButton(BUTTON_X, buttonStatus[POSB3]);
+  XInput.setButton(BUTTON_Y, buttonStatus[POSB4]);
+  XInput.setButton(BUTTON_LB, buttonStatus[POSB5]);
+  XInput.setButton(BUTTON_RB, buttonStatus[POSB6]);
+  XInput.setButton(BUTTON_BACK, buttonStatus[POSB7]);
+  XInput.setButton(BUTTON_START, buttonStatus[POSB8]);
+  XInput.setButton(BUTTON_L3, buttonStatus[POSB9]);
+  XInput.setButton(BUTTON_R3, buttonStatus[POSB10]);
   
-
-  //Axis
+  //Axes
   if(!LEFT_STICK_DISABLED) {
-    controller.stickUpdate(STICK_LEFT, xinput_scale_sticks(avgAnalogRead(pinLX)),
-      xinput_scale_sticks(avgAnalogRead(pinLY)));
+    int leftJoyX = analogRead(pinLX);
+    int leftJoyY = analogRead(pinLY);
+    XInput.setJoystick(JOY_LEFT, leftJoyX, leftJoyY);
   }
   if(!RIGHT_STICK_DISABLED) {
-    controller.stickUpdate(STICK_RIGHT, xinput_scale_sticks(avgAnalogRead(pinRX)),
-      xinput_scale_sticks(avgAnalogRead(pinRY)));
+    int rightJoyX = analogRead(pinRX);
+    int rightJoyY = analogRead(pinRY);
+    XInput.setJoystick(JOY_RIGHT, rightJoyX, rightJoyY);
   }
   if(!TRIGGER_DISABLED) {
-    controller.triggerUpdate(xinput_scale_trigger(avgAnalogRead(pinLeftTrig)),
-      xinput_scale_trigger(avgAnalogRead(pinRightTrig)));
-  }
+    int triggerLeft  = analogRead(pinLeftTrig);
+    int triggerRight = analogRead(pinRightTrig);
 
-  //Triggers
-//  uint8_t leftTrigger = 0;
-//  uint8_t rightTrigger = 0;
-//  if (buttonStatus[POSB3]) {leftTrigger = 0xFF;}
-//  if (buttonStatus[POSB4]) {rightTrigger = 0xFF;}
-//  controller.triggerUpdate(leftTrigger, rightTrigger);
+    // Set the trigger values as analog
+    XInput.setTrigger(TRIGGER_LEFT, triggerLeft);
+    XInput.setTrigger(TRIGGER_RIGHT, triggerRight);
+  }
 }
 
 //Setup
@@ -188,6 +172,11 @@ void setup()
 {
   //Increase resolution of analog inputs.
   analogReadResolution(ANALOG_RES);
+
+  XInput.setJoystickRange(0, pow(2,ANALOG_RES));  // Set joystick range to the ADC
+  XInput.setAutoSend(false);  // Wait for all controls before sending
+
+  XInput.begin();
   
   setupPins();
 }
@@ -199,21 +188,15 @@ void loop()
   
   //Process all inputs and load up the usbData registers correctly
   processInputs();
-  
-  //Check for bootloader jump
-//  if (buttonStatus[POSUP] & buttonStatus[POSB1] & buttonStatus[POSB5] & buttonStatus[POSST] & buttonStatus[POSSL])
-//  {
-//    controller.bootloaderJump();
-//  }
 
   //Update the LED display
-  controller.LEDUpdate();
+  //controller.LEDUpdate();
 
   //Send data
-  controller.sendXinput();
+  XInput.send();
 
   //Receive data
-  controller.receiveXinput();
+  //controller.receiveXinput();
 }
 
 /**
@@ -223,43 +206,43 @@ void loop()
  *   left trigger is the low side of the range (0 - 1.5V)
  *   right trigger is the high side of the range (1.5 - 3V)
  */
-int xinput_scale_trigger(int val) {
-  int _out_max = 0xFF;
-  int _out_min = 0;
-  int _in_min = 0;
-  int _in_max = pow(2,ANALOG_RES);
-  int _in_zero = (_in_max - _in_min)/2;
-  int ret = 0;
-
-  if(val >= _in_zero) { //Scale the high side
-    ret = map(val, _in_zero, _in_max, 0, _out_max);
-  } else {  //Scale the low side
-    ret = map(val, _in_min, _in_zero, _out_min, 0);
-  }
-
-  return ret;
-}
+//int xinput_scale_trigger(int val) {
+//  int _out_max = 0xFF;
+//  int _out_min = 0;
+//  int _in_min = 0;
+//  int _in_max = pow(2,ANALOG_RES);
+//  int _in_zero = (_in_max - _in_min)/2;
+//  int ret = 0;
+//
+//  if(val >= _in_zero) { //Scale the high side
+//    ret = map(val, _in_zero, _in_max, 0, _out_max);
+//  } else {  //Scale the low side
+//    ret = map(val, _in_min, _in_zero, _out_min, 0);
+//  }
+//
+//  return ret;
+//}
 
 /**
  * Scale the analog inputs to the range used by joystick function.
  *
  */
-int xinput_scale_sticks(int val) {
-  int _out_max = 32767;
-  int _out_min = -32768;
-  int _in_min = 0;
-  int _in_max = pow(2,ANALOG_RES);
-  int _in_zero = (_in_max - _in_min)/2;
-  int ret = 0;
-
-  if(val >= _in_zero) { //Scale the high side
-    ret = map(val, _in_zero, _in_max, 0, _out_max);
-  } else {  //Scale the low side
-    ret = map(val, _in_min, _in_zero, _out_min, 0);
-  }
-  
-  return ret;
-}
+//int xinput_scale_sticks(int val) {
+//  int _out_max = 32767;
+//  int _out_min = -32768;
+//  int _in_min = 0;
+//  int _in_max = pow(2,ANALOG_RES);
+//  int _in_zero = (_in_max - _in_min)/2;
+//  int ret = 0;
+//
+//  if(val >= _in_zero) { //Scale the high side
+//    ret = map(val, _in_zero, _in_max, 0, _out_max);
+//  } else {  //Scale the low side
+//    ret = map(val, _in_min, _in_zero, _out_min, 0);
+//  }
+//  
+//  return ret;
+//}
 
 int avgAnalogRead(int channel) {
   #define SAMPLES 5
