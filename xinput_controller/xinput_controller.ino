@@ -41,10 +41,13 @@
 #define pinLeftTrig  4 //Left trigger
 #define pinRightTrig 5 //Right trigger
 
-//DISABLED ANALOG INPUTS
-#define LEFT_STICK_DISABLED false
-#define RIGHT_STICK_DISABLED true
-#define TRIGGER_DISABLED true
+                                //When box is upside down
+//DISABLED ANALOG INPUTS        //Left board    Right board
+#define LEFT_X_DISABLED false   //true          false
+#define LEFT_Y_DISABLED false   //true          false
+#define RIGHT_X_DISABLED true    //false         true
+#define RIGHT_Y_DISABLED true   //true          true
+#define TRIGGER_DISABLED true   //true          true
 
 #define ANALOG_RES 13     // Resolution of the analog reads (bits)
 
@@ -131,6 +134,13 @@ void buttonRead()
 //ProcessInputs
 void processInputs()
 {
+  int leftJoyX = pow(2,ANALOG_RES)/2;
+  int leftJoyY = pow(2,ANALOG_RES)/2;
+  int rightJoyX = pow(2,ANALOG_RES)/2;
+  int rightJoyY = pow(2,ANALOG_RES)/2;
+  int triggerLeft= 0;
+  int triggerRight = 0;
+  
   //Update the DPAD
   XInput.setDpad(buttonStatus[POSUP], buttonStatus[POSDN], buttonStatus[POSLT], buttonStatus[POSRT]);
 
@@ -147,24 +157,30 @@ void processInputs()
   XInput.setButton(BUTTON_R3, buttonStatus[POSB10]);
   
   //Axes
-  if(!LEFT_STICK_DISABLED) {
-    int leftJoyX = analogRead(pinLX);
-    int leftJoyY = analogRead(pinLY);
-    XInput.setJoystick(JOY_LEFT, leftJoyX, leftJoyY);
+  if(!LEFT_X_DISABLED) {
+    leftJoyX = analogRead(pinLX);
   }
-  if(!RIGHT_STICK_DISABLED) {
-    int rightJoyX = analogRead(pinRX);
-    int rightJoyY = analogRead(pinRY);
-    XInput.setJoystick(JOY_RIGHT, rightJoyX, rightJoyY);
+  if(!LEFT_Y_DISABLED) {
+    leftJoyY = analogRead(pinLY);
+  }
+  if(!RIGHT_X_DISABLED) {
+    rightJoyX = analogRead(pinRX);
+  }
+  if(!RIGHT_Y_DISABLED) {
+    rightJoyY = analogRead(pinRY);
   }
   if(!TRIGGER_DISABLED) {
-    int triggerLeft  = analogRead(pinLeftTrig);
-    int triggerRight = analogRead(pinRightTrig);
-
-    // Set the trigger values as analog
-    XInput.setTrigger(TRIGGER_LEFT, triggerLeft);
-    XInput.setTrigger(TRIGGER_RIGHT, triggerRight);
+    triggerLeft  = analogRead(pinLeftTrig);
+    triggerRight = analogRead(pinRightTrig);
   }
+
+
+  XInput.setJoystick(JOY_RIGHT, rightJoyX, rightJoyY);
+  XInput.setJoystick(JOY_LEFT, leftJoyX, leftJoyY);  
+  // Set the trigger values as analog
+  XInput.setTrigger(TRIGGER_LEFT, triggerLeft);
+  XInput.setTrigger(TRIGGER_RIGHT, triggerRight);
+
 }
 
 //Setup
