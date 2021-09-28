@@ -16,13 +16,13 @@ Follow the installation instructions for ArduinoXInput library found [in its rep
 
 ![](pcb/pcb.jpg)
 
-Generic breakout board for a typical xinput device that provides the following on 0.1" pitch headers:
-  * 10x discrete button input channels
-  * 4x discrete D-Pad inputs (Up, Down, Left, Right)
-  * 6x analog input channels (Right Axis X & Y, Left Axis X & Y, Left & Right Triggers)
-
 * KiCAD project files and gerbers are [here](https://github.com/jcorcoran/xinput_controller/tree/master/pcb/galvanize)
 * Also available for easy one-click ordering from: https://oshpark.com/shared_projects/lwcYD8mQ
+
+Generic breakout board for a typical xinput device that provides the following on 0.1" pitch headers:
+   * 10x discrete button input channels
+   * 4x discrete D-Pad inputs (Up, Down, Left, Right)
+   * 6x analog input channels (Right Axis X & Y, Left Axis X & Y, Left & Right Triggers)
 
 ### Bill of materials:
 
